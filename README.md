@@ -163,9 +163,17 @@ Búsqueda automática por Radarr/Sonarr
 
 Descarga segura via qBittorrent + VPN
 
-Organización automática en bibliotecas
-
-Disponible instantáneamente en Plex
+🎯 Flujo de Trabajo
+1. **Autenticación y acceso seguro**
+   - El tráfico entrante se gestiona mediante **Nginx Proxy Manager** (SSL) y **Authelia** (SSO + 2FA) para proteger todas las aplicaciones expuestas.
+   - **Gluetun** enruta las descargas a través de una VPN dedicada, aislando el tráfico sensible del resto de la red.
+2. **Automatización de contenidos**
+   - Los usuarios realizan solicitudes en **Overseerr**, que comunica las peticiones a **Radarr** (películas) y **Sonarr** (series).
+   - **Prowlarr** proporciona los indexadores a Radarr/Sonarr, mientras que **qBittorrent** gestiona las descargas dentro del túnel VPN.
+   - Tras la descarga, **Bazarr** sincroniza subtítulos y **Tdarr** optimiza los archivos antes de que **Plex** los sirva en la biblioteca.
+3. **Respaldo y mantenimiento**
+   - Todos los contenedores montan volúmenes persistentes en `config/` y `media/`, lo que facilita la creación de copias de seguridad programadas.
+   - Se recomienda automatizar respaldos periódicos (por ejemplo, con `cron` o tareas programadas) y utilizar el script `limpieza_automatica.bat` como referencia para depurar descargas temporales.
 
 🔧 Mantenimiento
 ### Limpieza automática de descargas
