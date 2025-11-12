@@ -1,4 +1,4 @@
-$MediaRoot = if ($env:MEDIA_ROOT) { $env:MEDIA_ROOT } else { 'C:\docker-services\media' }
+$MediaRoot = if ($env:MEDIA_ROOT) { $env:MEDIA_ROOT } else { '/data/media' }
 $DownloadsRoot = if ($env:DOWNLOADS_ROOT) { $env:DOWNLOADS_ROOT } else { Join-Path $MediaRoot 'downloads' }
 $CompletedDir = if ($env:COMPLETED_DIR) { $env:COMPLETED_DIR } else { Join-Path $DownloadsRoot 'completed' }
 $IncompleteDir = if ($env:INCOMPLETE_DIR) { $env:INCOMPLETE_DIR } else { Join-Path $DownloadsRoot 'incomplete' }
@@ -23,4 +23,3 @@ Write-Host 'Limpiando descargas antiguas...'
 Remove-OldFiles -Path $CompletedDir -Days 30
 Remove-OldFiles -Path $IncompleteDir -Days 7
 Write-Host 'Limpieza completada.'
-

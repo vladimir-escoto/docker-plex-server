@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MEDIA_ROOT=${MEDIA_ROOT:-/docker-services/media}
+MEDIA_ROOT=${MEDIA_ROOT:-/data/media}
 DOWNLOADS_ROOT=${DOWNLOADS_ROOT:-"$MEDIA_ROOT/downloads"}
 COMPLETED_DIR=${COMPLETED_DIR:-"$DOWNLOADS_ROOT/completed"}
 INCOMPLETE_DIR=${INCOMPLETE_DIR:-"$DOWNLOADS_ROOT/incomplete"}
@@ -25,4 +25,3 @@ log "Limpiando descargas antiguas..."
 prune_directory "$COMPLETED_DIR" 30
 prune_directory "$INCOMPLETE_DIR" 7
 log "Limpieza completada."
-
