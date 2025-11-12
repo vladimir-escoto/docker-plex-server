@@ -47,50 +47,36 @@ text
 Resultado: Acceso remoto seguro y protegido desde cualquier dispositivo
 
 🚀 Comenzando
-## Requisitos
-- Docker Engine 24+ y Docker Compose Plugin 2.20+ instalados
-- Sistema operativo Windows 11, Linux o macOS con soporte para contenedores
-- Conexión a internet estable para descargas y actualización de contenedores
-- Al menos 200 GB de almacenamiento libre (recomendado) para la biblioteca multimedia
-- 8 GB de RAM mínimo recomendado para un funcionamiento fluido
+Prerrequisitos
+Docker y Docker Compose instalados
 
-## Guía de despliegue
-1. **Clonar el repositorio**
-   ```bash
-   git clone https://github.com/tuusuario/media-server-setup.git
-   cd media-server-setup
-   ```
-2. **Preparar el archivo de variables de entorno**
-   ```bash
-   cp .env.example .env
-   # Edita .env con tus rutas, credenciales y claves API
-   ```
-3. **Generar secretos seguros**
-   Reemplaza los valores por defecto de los archivos `authelia_encryption.txt`, `authelia_session.txt`, `authelia_jwt.txt` y `postgres_secret.txt` con cadenas generadas de forma segura.
-   ```bash
-   openssl rand -hex 64 | tee authelia_encryption.txt
-   openssl rand -hex 64 | tee authelia_session.txt
-   openssl rand -hex 64 | tee authelia_jwt.txt
-   openssl rand -hex 32 | tee postgres_secret.txt
-   ```
-4. **Crear directorios persistentes**
-   ```bash
-   mkdir -p config/{authelia,bazarr,npm,overseerr,plex,prowlarr,qbittorrent,radarr,sonarr,tdarr}
-   mkdir -p media/{downloads,movies,music,tv}
-   ```
-5. **Asignar permisos adecuados**
-   ```bash
-   sudo chown -R $USER:$USER config media
-   sudo chmod -R 755 config media
-   ```
-   > En entornos NAS o servidores remotos ajusta usuario/grupo según corresponda.
-6. **Iniciar los servicios**
-   ```bash
-   docker compose up -d
-   ```
+Windows 11, Linux, o macOS
 
-## Acceso rápido a los servicios
-Una vez que los contenedores estén en ejecución, accede a las interfaces web desde tu navegador:
+Mínimo 8GB RAM recomendado
+
+Almacenamiento suficiente para tu biblioteca multimedia
+
+Instalación Rápida
+Clonar el repositorio:
+
+bash
+git clone https://github.com/tuusuario/media-server-setup.git
+cd media-server-setup
+Configurar variables de entorno:
+
+bash
+cp .env.example .env
+# Edita .env con tus rutas, identificadores y credenciales
+
+Para generar secretos seguros (por ejemplo para `POSTGRES_PASSWORD`) puedes ejecutar:
+
+bash
+openssl rand -hex 32
+Ejecutar el sistema:
+
+bash
+docker-compose up -d
+Acceder a los servicios:
 
 Plex: http://localhost:32400
 
@@ -119,11 +105,17 @@ media-server-setup/
 └── 📄 README.md              # Esta documentación
 ⚙️ Configuración
 Configuración Básica
-Obtener token de Plex: Visita plex.tv/claim
+Variables de entorno clave (todas documentadas en `.env.example`):
 
-Configurar VPN: Edita la configuración de Gluetun
+- `TIMEZONE`: Zona horaria para los contenedores.
+- `CONFIG_PATH`: Carpeta persistente para configuraciones.
+- `MEDIA_PATH`: Ruta raíz de la biblioteca multimedia.
+- `PUID` / `PGID`: Usuario y grupo del host que poseerán los archivos.
+- `PLEX_CLAIM_TOKEN`: Token opcional para reclamar Plex (https://plex.tv/claim).
+- `POSTGRES_PASSWORD`: Contraseña del usuario principal de Postgres (genera un valor seguro con `openssl rand -hex 32`).
+- `VPN_SERVICE_PROVIDER`, `VPN_TYPE`, `SERVER_REGIONS`: Ajustes del contenedor Gluetun según tu proveedor VPN.
 
-Configurar rutas: Ajusta las rutas de almacenamiento en .env
+Configura estos valores antes de levantar los servicios para adaptarlos a tu entorno.
 
 Configuración de Servicios
 Cada servicio está preconfigurado para integrarse automáticamente:
@@ -136,21 +128,40 @@ qBittorrent → Descarga a través de VPN automáticamente
 
 Bazarr → Sincroniza subtítulos automáticamente
 
-🧩 Servicios y puertos principales
-| Servicio | Puerto | Rol principal |
-|----------|-------|---------------|
-| Plex Media Server | 32400 | Servidor de streaming y transcodificación multimedia |
-| Overseerr | 5055 | Portal de solicitudes para usuarios finales |
-| Radarr | 7878 | Automatización de descargas de películas |
-| Sonarr | 8989 | Automatización de descargas de series |
-| Bazarr | 6767 | Gestión automática de subtítulos |
-| Tdarr | 8265 | Optimización y transcodificación de medios |
-| qBittorrent | 8080 | Cliente torrent integrado con VPN |
-| Prowlarr | 9696 | Agregador de indexadores para Radarr/Sonarr |
-| Nginx Proxy Manager | 81 / 443 | Proxy inverso, certificados SSL y redirecciones |
-| Authelia | 9091 | Autenticación de dos factores y SSO |
-| Gluetun (VPN) | 8000/1194 | Túnel VPN y cortafuegos para tráfico de descargas |
-| PostgreSQL | 5432 | Base de datos para Authelia y servicios auxiliares |
+🔐 Ajustes de Authelia (Usuarios, Correo y 2FA)
+
+Los servicios protegidos por Authelia se controlan desde `config/authelia/configuration.yml` y el archivo de usuarios `config/authelia/users_database.yml`.
+
+1. **Usuarios y contraseñas**
+   - Edita `config/authelia/users_database.yml` para actualizar nombres, correos y pertenencia a grupos.
+   - Las contraseñas deben estar en formato Argon2id. Puedes generar un hash seguro con:
+
+     ```bash
+     docker run --rm authelia/authelia:latest authelia crypto hash generate argon2 --password 'TuContraseñaSegura'
+     ```
+
+     Copia el valor de `Digest` en el campo `password` del usuario correspondiente.
+
+2. **Secretos y llaves**
+   - Genera valores aleatorios de al menos 32 caracteres para `jwt_secret`, `session.secret`, `storage.encryption_key` y la contraseña de la base de datos (`storage.postgres.password`). Puedes reutilizar los archivos de este repositorio (`authelia_jwt.txt`, `authelia_encryption.txt`, `authelia_session.txt`, `postgres_secret.txt`) o crear los tuyos propios y pegarlos en `config/authelia/configuration.yml`.
+   - Si usas Docker secrets o variables de entorno, ajusta las rutas/valores en el archivo de configuración para que apunten a esos secretos.
+
+3. **Políticas de acceso y 2FA**
+   - Ajusta `access_control.rules` en `config/authelia/configuration.yml` para definir qué dominios requieren 2FA, 1FA o acceso libre.
+   - Configura `totp_secret` para cada usuario que requiera autenticación de dos factores. Puedes generar uno nuevo con:
+
+     ```bash
+     docker run --rm authelia/authelia:latest authelia tools totp generate --issuer 'TuDominio' --account 'usuario@tu-dominio.com'
+     ```
+
+     Escanea el código QR generado en tu aplicación de autenticación (por ejemplo, Authy o Google Authenticator).
+
+🎯 Flujo de Trabajo
+Solicitar contenido a través de Overseerr
+
+Búsqueda automática por Radarr/Sonarr
+
+Descarga segura via qBittorrent + VPN
 
 🎯 Flujo de Trabajo
 1. **Autenticación y acceso seguro**
@@ -165,6 +176,24 @@ Bazarr → Sincroniza subtítulos automáticamente
    - Se recomienda automatizar respaldos periódicos (por ejemplo, con `cron` o tareas programadas) y utilizar el script `limpieza_automatica.bat` como referencia para depurar descargas temporales.
 
 🔧 Mantenimiento
+### Limpieza automática de descargas
+Los scripts de limpieza eliminan los archivos antiguos de las carpetas de descargas completadas (30 días) e incompletas (7 días).
+
+Variables disponibles:
+
+- `MEDIA_ROOT`: Ruta base del almacenamiento multimedia. Valor predeterminado: `/docker-services/media` en Linux/macOS o `C:\docker-services\media` en Windows.
+- `DOWNLOADS_ROOT`: Carpeta de descargas dentro de `MEDIA_ROOT`. Valor predeterminado: `<MEDIA_ROOT>/downloads`.
+- `COMPLETED_DIR`: Carpeta de descargas completadas. Valor predeterminado: `<DOWNLOADS_ROOT>/completed`.
+- `INCOMPLETE_DIR`: Carpeta de descargas incompletas. Valor predeterminado: `<DOWNLOADS_ROOT>/incomplete`.
+
+#### Ejecución manual
+- Linux/macOS: `MEDIA_ROOT=/ruta/a/media DOWNLOADS_ROOT=/ruta/a/downloads ./scripts/cleanup.sh`
+- Windows PowerShell: `Set-Location <ruta-del-repo>; $env:MEDIA_ROOT='D:\\media'; .\\scripts\\cleanup.ps1`
+
+#### Programación automática
+- Linux/macOS (cron): `0 3 * * * MEDIA_ROOT=/ruta/a/media DOWNLOADS_ROOT=/ruta/a/downloads /ruta/al/repo/scripts/cleanup.sh >> /var/log/cleanup.log 2>&1`
+- Windows (Task Scheduler): Crear una tarea programada diaria que ejecute `powershell.exe -File "C:\ruta\al\repo\scripts\cleanup.ps1"`, configurando las variables de entorno en la tarea si es necesario.
+
 Comandos Útiles
 bash
 # Iniciar todos los servicios
