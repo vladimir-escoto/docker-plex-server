@@ -1,0 +1,15 @@
+users:
+  admin:
+    displayname: "Administrador Principal"
+    email: admin@example.com
+    password: "$argon2id$v=19$m=65536,t=3,p=4$TaU1Z2o4dHB5R3h0d3BqUw$k5lY5wMdXtKznP1I8DT6vKrrO5gkP7FpC18m0tHbdE0"
+    groups:
+      - admins
+      - members
+    totp_secret: "JBSWY3DPEHPK3PXP"
+  maria:
+    displayname: "María Ejemplo"
+    email: maria@example.com
+    password: "$argon2id$v=19$m=65536,t=3,p=4$YUdWdFlYSmhhV05sWlM1aw$pLRNvKcJsteVEh9UpAJZciV06P88eaJEqn3Ejj6+Ue4"
+    groups:
+      - members

@@ -128,6 +128,34 @@ qBittorrent → Descarga a través de VPN automáticamente
 
 Bazarr → Sincroniza subtítulos automáticamente
 
+🔐 Ajustes de Authelia (Usuarios, Correo y 2FA)
+
+Los servicios protegidos por Authelia se controlan desde `config/authelia/configuration.yml` y el archivo de usuarios `config/authelia/users_database.yml`.
+
+1. **Usuarios y contraseñas**
+   - Edita `config/authelia/users_database.yml` para actualizar nombres, correos y pertenencia a grupos.
+   - Las contraseñas deben estar en formato Argon2id. Puedes generar un hash seguro con:
+
+     ```bash
+     docker run --rm authelia/authelia:latest authelia crypto hash generate argon2 --password 'TuContraseñaSegura'
+     ```
+
+     Copia el valor de `Digest` en el campo `password` del usuario correspondiente.
+
+2. **Secretos y llaves**
+   - Genera valores aleatorios de al menos 32 caracteres para `jwt_secret`, `session.secret`, `storage.encryption_key` y la contraseña de la base de datos (`storage.postgres.password`). Puedes reutilizar los archivos de este repositorio (`authelia_jwt.txt`, `authelia_encryption.txt`, `authelia_session.txt`, `postgres_secret.txt`) o crear los tuyos propios y pegarlos en `config/authelia/configuration.yml`.
+   - Si usas Docker secrets o variables de entorno, ajusta las rutas/valores en el archivo de configuración para que apunten a esos secretos.
+
+3. **Políticas de acceso y 2FA**
+   - Ajusta `access_control.rules` en `config/authelia/configuration.yml` para definir qué dominios requieren 2FA, 1FA o acceso libre.
+   - Configura `totp_secret` para cada usuario que requiera autenticación de dos factores. Puedes generar uno nuevo con:
+
+     ```bash
+     docker run --rm authelia/authelia:latest authelia tools totp generate --issuer 'TuDominio' --account 'usuario@tu-dominio.com'
+     ```
+
+     Escanea el código QR generado en tu aplicación de autenticación (por ejemplo, Authy o Google Authenticator).
+
 🎯 Flujo de Trabajo
 Solicitar contenido a través de Overseerr
 

@@ -1,1 +1,45 @@
-{}
+server:
+  host: 0.0.0.0
+  port: 9091
+  path: ""
+  read_buffer_size: 4096
+  write_buffer_size: 4096
+  asset_path: /
+
+jwt_secret: "ik6q1v0U1f4vR0Zp4eU5E7zSYXh6MpW8Q1Dh9zvV7QH74odVs3p9oGgVv0K3TfX3"
+
+session:
+  secret: "BVz7pWqDN1oP0yQn4sRf8tH1lKs5zCv8xMg2wLp6yRd5nFu3aEz9qTb1uWy4rGh7"
+  expiration: 1h
+  inactivity: 5m
+  domain: media.example.com
+
+storage:
+  encryption_key: "e1C46o5u3lJG7X0qpN8mx2AGzWgM8kZo"
+  postgres:
+    host: postgres
+    port: 5432
+    database: authelia
+    schema: public
+    username: authelia
+    password: "oFe1ma9vL0ZLF5UT6NyMyQImY1Yw9Cxg"
+    sslmode: disable
+
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+    watch: true
+
+access_control:
+  default_policy: deny
+  rules:
+    - domain: "*.media.example.com"
+      policy: two_factor
+      subject:
+        - group: admins
+    - domain: "overseerr.media.example.com"
+      policy: one_factor
+      subject:
+        - group: members
+    - domain: "status.media.example.com"
+      policy: bypass
