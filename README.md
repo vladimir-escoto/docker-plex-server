@@ -66,7 +66,12 @@ Configurar variables de entorno:
 
 bash
 cp .env.example .env
-# Editar .env con tu configuración
+# Edita .env con tus rutas, identificadores y credenciales
+
+Para generar secretos seguros (por ejemplo para `POSTGRES_PASSWORD`) puedes ejecutar:
+
+bash
+openssl rand -hex 32
 Ejecutar el sistema:
 
 bash
@@ -100,11 +105,17 @@ media-server-setup/
 └── 📄 README.md              # Esta documentación
 ⚙️ Configuración
 Configuración Básica
-Obtener token de Plex: Visita plex.tv/claim
+Variables de entorno clave (todas documentadas en `.env.example`):
 
-Configurar VPN: Edita la configuración de Gluetun
+- `TIMEZONE`: Zona horaria para los contenedores.
+- `CONFIG_PATH`: Carpeta persistente para configuraciones.
+- `MEDIA_PATH`: Ruta raíz de la biblioteca multimedia.
+- `PUID` / `PGID`: Usuario y grupo del host que poseerán los archivos.
+- `PLEX_CLAIM_TOKEN`: Token opcional para reclamar Plex (https://plex.tv/claim).
+- `POSTGRES_PASSWORD`: Contraseña del usuario principal de Postgres (genera un valor seguro con `openssl rand -hex 32`).
+- `VPN_SERVICE_PROVIDER`, `VPN_TYPE`, `SERVER_REGIONS`: Ajustes del contenedor Gluetun según tu proveedor VPN.
 
-Configurar rutas: Ajusta las rutas de almacenamiento en .env
+Configura estos valores antes de levantar los servicios para adaptarlos a tu entorno.
 
 Configuración de Servicios
 Cada servicio está preconfigurado para integrarse automáticamente:
