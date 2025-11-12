@@ -1,0 +1,273 @@
+version: '3.8'
+
+services:
+  # === BASE DE DATOS POSTGRES ===
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: mediadb
+      POSTGRES_USER: mediauser
+    volumes:
+      - ${CONFIG_PATH}/postgres:/var/lib/postgresql/data
+    networks:
+      - media-network
+
+  # === VPN GLUETUN ===
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}
+      - VPN_TYPE=${VPN_TYPE}
+      - SERVER_REGIONS=${SERVER_REGIONS}
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${CONFIG_PATH}/gluetun:/gluetun
+    ports:
+      - "8888:8888/tcp"  # HTTP proxy
+      - "9091:9091/tcp"  # Authelia
+    networks:
+      - media-network
+
+  # === ETAPA 1: NUCLEO ESENCIAL ===
+
+  plex:
+    image: plexinc/pms-docker:latest
+    container_name: plex
+    restart: unless-stopped
+    environment:
+      - PLEX_CLAIM=${PLEX_CLAIM_TOKEN}
+      - TZ=${TIMEZONE}
+      - PLEX_UID=${PUID}
+      - PLEX_GID=${PGID}
+    volumes:
+      - ${CONFIG_PATH}/plex:/config
+      - ${MEDIA_PATH}/movies:/data/movies
+      - ${MEDIA_PATH}/tv:/data/tv
+      - ${MEDIA_PATH}/music:/data/music
+      - ${MEDIA_PATH}/books:/data/books
+      - ${MEDIA_PATH}/transcoding:/transcode
+    ports:
+      - "32400:32400"
+    networks:
+      - media-network
+
+  radarr:
+    image: linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    environment:
+      - TZ=${TIMEZONE}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ${CONFIG_PATH}/radarr:/config
+      - ${MEDIA_PATH}/movies:/movies
+      - ${MEDIA_PATH}/downloads:/downloads
+    ports:
+      - "7878:7878"
+    networks:
+      - media-network
+    depends_on:
+      - gluetun
+
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      - TZ=${TIMEZONE}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ${CONFIG_PATH}/sonarr:/config
+      - ${MEDIA_PATH}/tv:/tv
+      - ${MEDIA_PATH}/downloads:/downloads
+    ports:
+      - "8989:8989"
+    networks:
+      - media-network
+    depends_on:
+      - gluetun
+
+  qbittorrent:
+    image: linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    environment:
+      - TZ=${TIMEZONE}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - WEBUI_PORT=8080
+    volumes:
+      - ${CONFIG_PATH}/qbittorrent:/config
+      - ${MEDIA_PATH}/downloads:/downloads
+    network_mode: "service:gluetun"
+
+  prowlarr:
+    image: linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    environment:
+      - TZ=${TIMEZONE}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ${CONFIG_PATH}/prowlarr:/config
+    ports:
+      - "9696:9696"
+    networks:
+      - media-network
+
+  overseerr:
+    image: sctx/overseerr:latest
+    container_name: overseerr
+    restart: unless-stopped
+    environment:
+      - TZ=${TIMEZONE}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ${CONFIG_PATH}/overseerr:/app/config
+    ports:
+      - "5055:5055"
+    networks:
+      - media-network
+    depends_on:
+      - radarr
+      - sonarr
+      - plex
+
+  # === EXPANSION DE CONTENIDO ===
+
+  lidarr:
+    image: linuxserver/lidarr:latest
+    container_name: lidarr
+    restart: unless-stopped
+    environment:
+      - TZ=${TIMEZONE}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ${CONFIG_PATH}/lidarr:/config
+      - ${MEDIA_PATH}/music:/music
+      - ${MEDIA_PATH}/downloads:/downloads
+    ports:
+      - "8686:8686"
+    networks:
+      - media-network
+    depends_on:
+      - gluetun
+
+  readarr:
+    image: linuxserver/readarr:latest
+    container_name: readarr
+    restart: unless-stopped
+    environment:
+      - TZ=${TIMEZONE}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ${CONFIG_PATH}/readarr:/config
+      - ${MEDIA_PATH}/books:/books
+      - ${MEDIA_PATH}/downloads:/downloads
+    ports:
+      - "8787:8787"
+    networks:
+      - media-network
+    depends_on:
+      - gluetun
+
+  # === ETAPA 2: AUTOMATIZACION ===
+
+  bazarr:
+    image: linuxserver/bazarr:latest
+    container_name: bazarr
+    restart: unless-stopped
+    environment:
+      - TZ=${TIMEZONE}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ${CONFIG_PATH}/bazarr:/config
+      - ${MEDIA_PATH}/movies:/movies
+      - ${MEDIA_PATH}/tv:/tv
+    ports:
+      - "6767:6767"
+    networks:
+      - media-network
+
+  tdarr:
+    image: ghcr.io/haveagitgat/tdarr:latest
+    container_name: tdarr
+    restart: unless-stopped
+    environment:
+      - TZ=${TIMEZONE}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - serverPort=8265
+      - webUIPort=8266
+    volumes:
+      - ${CONFIG_PATH}/tdarr:/app/server
+      - ${CONFIG_PATH}/tdarr:/app/configs
+      - ${MEDIA_PATH}:/media
+    ports:
+      - "8265:8265"
+      - "8266:8266"
+    networks:
+      - media-network
+
+  # === ETAPA 3: SEGURIDAD Y ACCESO ===
+
+  nginxproxymanager:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginxproxymanager
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "81:81"
+    volumes:
+      - ${CONFIG_PATH}/nginxproxymanager/data:/data
+      - ${CONFIG_PATH}/nginxproxymanager/letsencrypt:/etc/letsencrypt
+    networks:
+      - media-network
+    depends_on:
+      - authelia
+
+  authelia:
+    image: authelia/authelia:latest
+    container_name: authelia
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH}/authelia:/config
+    ports:
+      - "9091:9091"
+    networks:
+      - media-network
+    environment:
+      - TZ=${TIMEZONE}
+
+  # === SISTEMA DE BACKUP ===
+  backup:
+    image: alpine:latest
+    container_name: backup
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH}:/source
+      - ${CONFIG_PATH}/backup:/backup
+    networks:
+      - media-network
+
+networks:
+  media-network:
+    driver: bridge
+
