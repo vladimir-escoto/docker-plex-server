@@ -204,7 +204,7 @@ services:
       - media-network
 
   tdarr:
-    image: ghcr.io/haveagitgat/tdarr:latest
+    image: linuxserver/tdarr:latest
     container_name: tdarr
     restart: unless-stopped
     environment:
