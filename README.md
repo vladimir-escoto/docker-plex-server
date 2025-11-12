@@ -47,31 +47,50 @@ text
 Resultado: Acceso remoto seguro y protegido desde cualquier dispositivo
 
 🚀 Comenzando
-Prerrequisitos
-Docker y Docker Compose instalados
+## Requisitos
+- Docker Engine 24+ y Docker Compose Plugin 2.20+ instalados
+- Sistema operativo Windows 11, Linux o macOS con soporte para contenedores
+- Conexión a internet estable para descargas y actualización de contenedores
+- Al menos 200 GB de almacenamiento libre (recomendado) para la biblioteca multimedia
+- 8 GB de RAM mínimo recomendado para un funcionamiento fluido
 
-Windows 11, Linux, o macOS
+## Guía de despliegue
+1. **Clonar el repositorio**
+   ```bash
+   git clone https://github.com/tuusuario/media-server-setup.git
+   cd media-server-setup
+   ```
+2. **Preparar el archivo de variables de entorno**
+   ```bash
+   cp .env.example .env
+   # Edita .env con tus rutas, credenciales y claves API
+   ```
+3. **Generar secretos seguros**
+   Reemplaza los valores por defecto de los archivos `authelia_encryption.txt`, `authelia_session.txt`, `authelia_jwt.txt` y `postgres_secret.txt` con cadenas generadas de forma segura.
+   ```bash
+   openssl rand -hex 64 | tee authelia_encryption.txt
+   openssl rand -hex 64 | tee authelia_session.txt
+   openssl rand -hex 64 | tee authelia_jwt.txt
+   openssl rand -hex 32 | tee postgres_secret.txt
+   ```
+4. **Crear directorios persistentes**
+   ```bash
+   mkdir -p config/{authelia,bazarr,npm,overseerr,plex,prowlarr,qbittorrent,radarr,sonarr,tdarr}
+   mkdir -p media/{downloads,movies,music,tv}
+   ```
+5. **Asignar permisos adecuados**
+   ```bash
+   sudo chown -R $USER:$USER config media
+   sudo chmod -R 755 config media
+   ```
+   > En entornos NAS o servidores remotos ajusta usuario/grupo según corresponda.
+6. **Iniciar los servicios**
+   ```bash
+   docker compose up -d
+   ```
 
-Mínimo 8GB RAM recomendado
-
-Almacenamiento suficiente para tu biblioteca multimedia
-
-Instalación Rápida
-Clonar el repositorio:
-
-bash
-git clone https://github.com/tuusuario/media-server-setup.git
-cd media-server-setup
-Configurar variables de entorno:
-
-bash
-cp .env.example .env
-# Editar .env con tu configuración
-Ejecutar el sistema:
-
-bash
-docker-compose up -d
-Acceder a los servicios:
+## Acceso rápido a los servicios
+Una vez que los contenedores estén en ejecución, accede a las interfaces web desde tu navegador:
 
 Plex: http://localhost:32400
 
@@ -117,16 +136,33 @@ qBittorrent → Descarga a través de VPN automáticamente
 
 Bazarr → Sincroniza subtítulos automáticamente
 
+🧩 Servicios y puertos principales
+| Servicio | Puerto | Rol principal |
+|----------|-------|---------------|
+| Plex Media Server | 32400 | Servidor de streaming y transcodificación multimedia |
+| Overseerr | 5055 | Portal de solicitudes para usuarios finales |
+| Radarr | 7878 | Automatización de descargas de películas |
+| Sonarr | 8989 | Automatización de descargas de series |
+| Bazarr | 6767 | Gestión automática de subtítulos |
+| Tdarr | 8265 | Optimización y transcodificación de medios |
+| qBittorrent | 8080 | Cliente torrent integrado con VPN |
+| Prowlarr | 9696 | Agregador de indexadores para Radarr/Sonarr |
+| Nginx Proxy Manager | 81 / 443 | Proxy inverso, certificados SSL y redirecciones |
+| Authelia | 9091 | Autenticación de dos factores y SSO |
+| Gluetun (VPN) | 8000/1194 | Túnel VPN y cortafuegos para tráfico de descargas |
+| PostgreSQL | 5432 | Base de datos para Authelia y servicios auxiliares |
+
 🎯 Flujo de Trabajo
-Solicitar contenido a través de Overseerr
-
-Búsqueda automática por Radarr/Sonarr
-
-Descarga segura via qBittorrent + VPN
-
-Organización automática en bibliotecas
-
-Disponible instantáneamente en Plex
+1. **Autenticación y acceso seguro**
+   - El tráfico entrante se gestiona mediante **Nginx Proxy Manager** (SSL) y **Authelia** (SSO + 2FA) para proteger todas las aplicaciones expuestas.
+   - **Gluetun** enruta las descargas a través de una VPN dedicada, aislando el tráfico sensible del resto de la red.
+2. **Automatización de contenidos**
+   - Los usuarios realizan solicitudes en **Overseerr**, que comunica las peticiones a **Radarr** (películas) y **Sonarr** (series).
+   - **Prowlarr** proporciona los indexadores a Radarr/Sonarr, mientras que **qBittorrent** gestiona las descargas dentro del túnel VPN.
+   - Tras la descarga, **Bazarr** sincroniza subtítulos y **Tdarr** optimiza los archivos antes de que **Plex** los sirva en la biblioteca.
+3. **Respaldo y mantenimiento**
+   - Todos los contenedores montan volúmenes persistentes en `config/` y `media/`, lo que facilita la creación de copias de seguridad programadas.
+   - Se recomienda automatizar respaldos periódicos (por ejemplo, con `cron` o tareas programadas) y utilizar el script `limpieza_automatica.bat` como referencia para depurar descargas temporales.
 
 🔧 Mantenimiento
 Comandos Útiles
