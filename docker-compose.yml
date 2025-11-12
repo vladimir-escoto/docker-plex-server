@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # === BASE DE DATOS POSTGRES ===
   postgres:
@@ -168,7 +166,7 @@ services:
       - gluetun
 
   readarr:
-    image: linuxserver/readarr:latest
+    image: linuxserver/readarr:develop
     container_name: readarr
     restart: unless-stopped
     environment:
