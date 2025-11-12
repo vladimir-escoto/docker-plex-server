@@ -109,13 +109,23 @@ Variables de entorno clave (todas documentadas en `.env.example`):
 
 - `TIMEZONE`: Zona horaria para los contenedores.
 - `CONFIG_PATH`: Carpeta persistente para configuraciones.
-- `MEDIA_PATH`: Ruta raíz de la biblioteca multimedia.
+- `MEDIA_PATH`: Ruta raíz de la biblioteca multimedia. Valor predeterminado: `/data/media`.
 - `PUID` / `PGID`: Usuario y grupo del host que poseerán los archivos.
 - `PLEX_CLAIM_TOKEN`: Token opcional para reclamar Plex (https://plex.tv/claim).
 - `POSTGRES_PASSWORD`: Contraseña del usuario principal de Postgres (genera un valor seguro con `openssl rand -hex 32`).
 - `VPN_SERVICE_PROVIDER`, `VPN_TYPE`, `SERVER_REGIONS`: Ajustes del contenedor Gluetun según tu proveedor VPN.
 
 Configura estos valores antes de levantar los servicios para adaptarlos a tu entorno.
+
+### Cómo obtener `PUID`/`PGID`
+
+- **Linux y macOS**: ejecuta `id -u` para obtener el UID y `id -g` para el GID del usuario que administrará la biblioteca.
+- **WSL (Windows Subsystem for Linux)**: abre tu distribución (Ubuntu, Debian, etc.) y usa los mismos comandos `id -u` / `id -g`. Los valores devueltos son los que debes usar en `.env`.
+
+### Opciones de rutas en Windows
+
+1. **Usar WSL2** (recomendado): crea los directorios persistentes dentro de la distribución (por ejemplo, `mkdir -p /data/media /data/config`) y ejecuta Docker desde WSL (`docker compose up -d`).
+2. **Docker Desktop con bind mounts**: comparte la unidad deseada en Docker Desktop y define rutas en formato POSIX, por ejemplo `MEDIA_PATH=//c/Users/tu_usuario/Media` y `CONFIG_PATH=//c/Users/tu_usuario/Config`.
 
 Configuración de Servicios
 Cada servicio está preconfigurado para integrarse automáticamente:
@@ -181,18 +191,18 @@ Los scripts de limpieza eliminan los archivos antiguos de las carpetas de descar
 
 Variables disponibles:
 
-- `MEDIA_ROOT`: Ruta base del almacenamiento multimedia. Valor predeterminado: `/docker-services/media` en Linux/macOS o `C:\docker-services\media` en Windows.
+- `MEDIA_ROOT`: Ruta base del almacenamiento multimedia. Valor predeterminado: `/data/media`.
 - `DOWNLOADS_ROOT`: Carpeta de descargas dentro de `MEDIA_ROOT`. Valor predeterminado: `<MEDIA_ROOT>/downloads`.
 - `COMPLETED_DIR`: Carpeta de descargas completadas. Valor predeterminado: `<DOWNLOADS_ROOT>/completed`.
 - `INCOMPLETE_DIR`: Carpeta de descargas incompletas. Valor predeterminado: `<DOWNLOADS_ROOT>/incomplete`.
 
 #### Ejecución manual
-- Linux/macOS: `MEDIA_ROOT=/ruta/a/media DOWNLOADS_ROOT=/ruta/a/downloads ./scripts/cleanup.sh`
-- Windows PowerShell: `Set-Location <ruta-del-repo>; $env:MEDIA_ROOT='D:\\media'; .\\scripts\\cleanup.ps1`
+- Linux/macOS/WSL: `MEDIA_ROOT=/ruta/a/media DOWNLOADS_ROOT=/ruta/a/downloads ./scripts/cleanup.sh`
+- Windows (PowerShell con Docker Desktop): `Set-Location <ruta-del-repo>; $env:MEDIA_ROOT='//c/Users/<usuario>/Media'; ./scripts/cleanup.ps1`
 
 #### Programación automática
-- Linux/macOS (cron): `0 3 * * * MEDIA_ROOT=/ruta/a/media DOWNLOADS_ROOT=/ruta/a/downloads /ruta/al/repo/scripts/cleanup.sh >> /var/log/cleanup.log 2>&1`
-- Windows (Task Scheduler): Crear una tarea programada diaria que ejecute `powershell.exe -File "C:\ruta\al\repo\scripts\cleanup.ps1"`, configurando las variables de entorno en la tarea si es necesario.
+- Linux/macOS/WSL (cron): `0 3 * * * MEDIA_ROOT=/ruta/a/media DOWNLOADS_ROOT=/ruta/a/downloads /ruta/al/repo/scripts/cleanup.sh >> /var/log/cleanup.log 2>&1`
+- Windows (Task Scheduler + Docker Desktop): Crear una tarea diaria que ejecute `powershell.exe -Command "Set-Location '<ruta-del-repo>'; ./scripts/cleanup.ps1"` y establezca previamente `MEDIA_ROOT`/`DOWNLOADS_ROOT` en formato POSIX (`//c/...`).
 
 Comandos Útiles
 bash
