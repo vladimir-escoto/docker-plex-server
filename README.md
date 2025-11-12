@@ -129,6 +129,24 @@ Organización automática en bibliotecas
 Disponible instantáneamente en Plex
 
 🔧 Mantenimiento
+### Limpieza automática de descargas
+Los scripts de limpieza eliminan los archivos antiguos de las carpetas de descargas completadas (30 días) e incompletas (7 días).
+
+Variables disponibles:
+
+- `MEDIA_ROOT`: Ruta base del almacenamiento multimedia. Valor predeterminado: `/docker-services/media` en Linux/macOS o `C:\docker-services\media` en Windows.
+- `DOWNLOADS_ROOT`: Carpeta de descargas dentro de `MEDIA_ROOT`. Valor predeterminado: `<MEDIA_ROOT>/downloads`.
+- `COMPLETED_DIR`: Carpeta de descargas completadas. Valor predeterminado: `<DOWNLOADS_ROOT>/completed`.
+- `INCOMPLETE_DIR`: Carpeta de descargas incompletas. Valor predeterminado: `<DOWNLOADS_ROOT>/incomplete`.
+
+#### Ejecución manual
+- Linux/macOS: `MEDIA_ROOT=/ruta/a/media DOWNLOADS_ROOT=/ruta/a/downloads ./scripts/cleanup.sh`
+- Windows PowerShell: `Set-Location <ruta-del-repo>; $env:MEDIA_ROOT='D:\\media'; .\\scripts\\cleanup.ps1`
+
+#### Programación automática
+- Linux/macOS (cron): `0 3 * * * MEDIA_ROOT=/ruta/a/media DOWNLOADS_ROOT=/ruta/a/downloads /ruta/al/repo/scripts/cleanup.sh >> /var/log/cleanup.log 2>&1`
+- Windows (Task Scheduler): Crear una tarea programada diaria que ejecute `powershell.exe -File "C:\ruta\al\repo\scripts\cleanup.ps1"`, configurando las variables de entorno en la tarea si es necesario.
+
 Comandos Útiles
 bash
 # Iniciar todos los servicios
